@@ -15,6 +15,7 @@ import {
     ActivityIndicator,
     Platform,
 } from 'react-native';
+import styled from 'styled-components'
 
 import {
     type DimensionsType,
@@ -34,7 +35,7 @@ const HEADER_HEIGHT = 60;
 const SCALE_EPSILON = 0.01;
 const SCALE_MULTIPLIER = 1.2;
 const SCALE_MAX_MULTIPLIER = 3;
-const FREEZE_SCROLL_DISTANCE = 15;
+const FREEZE_SCROLL_DISTANCE = 5;
 const BACKGROUND_OPACITY_MULTIPLIER = 0.003;
 const defaultBackgroundColor = [0, 0, 0];
 const HIT_SLOP = {top: 15, left: 15, right: 15, bottom: 15};
@@ -504,7 +505,7 @@ export default class ImageView extends Component<PropsType, StateType> {
         if (this.isScrolling) {
             return;
         }
-
+        
         if (this.currentTouchesNum === 1 && event.touches.length === 2) {
             this.initialTouches = event.touches;
         }
@@ -522,7 +523,6 @@ export default class ImageView extends Component<PropsType, StateType> {
         const {dx, dy} = gestureState;
         const imageInitialScale = this.getInitialScale();
         const {height} = images[imageIndex];
-
         if (imageScale !== imageInitialScale) {
             this.imageTranslateValue.x.setValue(x + dx);
         }
@@ -550,7 +550,7 @@ export default class ImageView extends Component<PropsType, StateType> {
         const currentDistance = getDistance(touches);
         const initialDistance = getDistance(this.initialTouches);
 
-        const scrollEnabled = Math.abs(dy) < FREEZE_SCROLL_DISTANCE;
+        const scrollEnabled = Math.abs(dy) < FREEZE_SCROLL_DISTANCE && event.touches.length < 2;
         this.setState({scrollEnabled});
 
         if (!initialDistance) {
@@ -909,7 +909,7 @@ export default class ImageView extends Component<PropsType, StateType> {
 
         return (
             <Modal
-                transparent
+                transparent={false}
                 visible={isVisible}
                 animationType={animationType}
                 onRequestClose={this.close}
@@ -921,7 +921,7 @@ export default class ImageView extends Component<PropsType, StateType> {
                     ]}
                 />
                 <Animated.View
-                    style={[styles.header, {transform: headerTranslate}]}
+                    style={[styles.header]}
                 >
                    <BackButton
                         onPress={() => {
@@ -949,18 +949,6 @@ export default class ImageView extends Component<PropsType, StateType> {
                     onMomentumScrollBegin={this.onMomentumScrollBegin}
                     onMomentumScrollEnd={this.onMomentumScrollEnd}
                 />
-                {renderFooter && (
-                    <Animated.View
-                        style={[styles.footer, {transform: footerTranslate}]}
-                        onLayout={event => {
-                            this.footerHeight = event.nativeEvent.layout.height;
-                        }}
-                    >
-                        {typeof renderFooter === 'function' &&
-                            images[imageIndex] &&
-                            renderFooter(images[imageIndex])}
-                    </Animated.View>
-                )}
             </Modal>
         );
     }

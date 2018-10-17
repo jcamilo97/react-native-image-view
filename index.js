@@ -39,6 +39,29 @@ const BACKGROUND_OPACITY_MULTIPLIER = 0.003;
 const defaultBackgroundColor = [0, 0, 0];
 const HIT_SLOP = {top: 15, left: 15, right: 15, bottom: 15};
 
+const BackButton = styled.TouchableOpacity`
+    height: 24px;
+    width: 70px;
+    display: flex;
+    position: absolute;
+    top: 20px;
+    left: 15px;
+    z-index: 200;
+`
+const BackIcon = styled.Image`
+  height: 20px;
+  width:  20px;
+  margin-right: 8px;
+  margin-bottom: 5px;
+`
+const BackButtonContainer = styled.View`
+    width: 100%;
+    height: 100%;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+`
 function createStyles({screenWidth, screenHeight}) {
     return StyleSheet.create({
         underlay: {
@@ -900,13 +923,15 @@ export default class ImageView extends Component<PropsType, StateType> {
                 <Animated.View
                     style={[styles.header, {transform: headerTranslate}]}
                 >
-                    <TouchableOpacity
-                        hitSlop={HIT_SLOP}
-                        style={styles.closeButton}
-                        onPress={this.close}
+                   <BackButton
+                        onPress={() => {
+                            this.close();
+                        }}
                     >
-                        <Text style={styles.closeButton__text}>×</Text>
-                    </TouchableOpacity>
+                        <BackButtonContainer>
+                            <BackIcon resizeMode="contain" source={this.props.icon} />
+                        </BackButtonContainer>
+                    </BackButton>
                 </Animated.View>
                 <FlatList
                     horizontal

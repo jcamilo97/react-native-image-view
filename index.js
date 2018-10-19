@@ -1,6 +1,6 @@
 // @flow
 
-import React, {Component, type Node} from 'react';
+import React, { Component, type Node } from 'react';
 import {
     Text,
     View,
@@ -35,10 +35,11 @@ const HEADER_HEIGHT = 60;
 const SCALE_EPSILON = 0.01;
 const SCALE_MULTIPLIER = 1.2;
 const SCALE_MAX_MULTIPLIER = 3;
-const FREEZE_SCROLL_DISTANCE = 5;
+const FREEZE_SCROLL_DISTANCE = 20;
 const BACKGROUND_OPACITY_MULTIPLIER = 0.003;
 const defaultBackgroundColor = [0, 0, 0];
-const HIT_SLOP = {top: 15, left: 15, right: 15, bottom: 15};
+const HIT_SLOP = { top: 15, left: 15, right: 15, bottom: 15 };
+const WHEEL_DY = 15.833;
 
 const BackButton = styled.TouchableOpacity`
     height: 24px;
@@ -63,7 +64,7 @@ const BackButtonContainer = styled.View`
   justify-content: space-between;
   align-items: center;
 `
-function createStyles({screenWidth, screenHeight}) {
+function createStyles({ screenWidth, screenHeight }) {
     return StyleSheet.create({
         underlay: {
             position: 'absolute',
@@ -138,7 +139,7 @@ const generatePanHandlers = (onStart, onMove, onRelease): any =>
         onPanResponderMove: onMove,
         onPanResponderRelease: onRelease,
         onPanResponderTerminate: onRelease,
-        onPanResponderTerminationRequest: (): void => {},
+        onPanResponderTerminationRequest: (): void => { },
     });
 
 const getScale = (currentDistance: number, initialDistance: number): number =>
@@ -159,7 +160,7 @@ function getDistance(touches: Array<TouchType>): number {
 function calculateInitialScale(
     imageWidth: number = 0,
     imageHeight: number = 0,
-    {screenWidth, screenHeight}
+    { screenWidth, screenHeight }
 ): number {
     const screenRatio = screenHeight / screenWidth;
     const imageRatio = imageHeight / imageWidth;
@@ -178,7 +179,7 @@ function calculateInitialScale(
 function calculateInitialTranslate(
     imageWidth: number = 0,
     imageHeight: number = 0,
-    {screenWidth, screenHeight}
+    { screenWidth, screenHeight }
 ): TranslateType {
     const getTranslate = (axis: string): number => {
         const imageSize = axis === 'x' ? imageWidth : imageHeight;
@@ -247,7 +248,7 @@ function hexToRgb(hex: string): number[] {
 }
 
 const getInitialParams = (
-    {width, height}: DimensionsType,
+    { width, height }: DimensionsType,
     screenDimensions: Object
 ): TransitionType => ({
     scale: calculateInitialScale(width, height, screenDimensions),
@@ -255,10 +256,10 @@ const getInitialParams = (
 });
 
 const addIndexesToImages = (images: Array<ImageType>) =>
-    images.map((image, index) => ({...image, index}));
+    images.map((image, index) => ({ ...image, index }));
 
 const getImagesWithoutSize = (images: Array<ImageType>) =>
-    images.filter(({width, height}) => !width || !height);
+    images.filter(({ width, height }) => !width || !height);
 
 const scalesAreEqual = (scaleA: number, scaleB: number): boolean =>
     Math.abs(scaleA - scaleB) < SCALE_EPSILON;
@@ -272,7 +273,8 @@ type PropsType = {
     imageIndex: number,
     isVisible: boolean,
     onClose: () => {},
-    renderFooter: ImageType => {},
+    renderFooter: ImageType => { },
+transparent: boolean
 };
 
 export type StateType = {
@@ -280,11 +282,11 @@ export type StateType = {
     isVisible: boolean,
     imageIndex: number,
     imageScale: number,
-    imageTranslate: {x: number, y: number},
+    imageTranslate: { x: number, y: number },
     scrollEnabled: boolean,
     panelsVisible: boolean,
     isFlatListRerendered: boolean,
-    screenDimensions: {screenWidth: number, screenHeight: number},
+    screenDimensions: { screenWidth: number, screenHeight: number },
 };
 
 export default class ImageView extends Component<PropsType, StateType> {
@@ -294,6 +296,7 @@ export default class ImageView extends Component<PropsType, StateType> {
         imageIndex: 0,
         glideAlways: false,
         glideAlwaysDelay: 75,
+        transparent: false
     };
 
     constructor(props: PropsType) {
@@ -310,11 +313,11 @@ export default class ImageView extends Component<PropsType, StateType> {
             isVisible: props.isVisible,
             imageIndex: props.imageIndex,
             imageScale: 1,
-            imageTranslate: {x: 0, y: 0},
+            imageTranslate: { x: 0, y: 0 },
             scrollEnabled: true,
             panelsVisible: true,
             isFlatListRerendered: false,
-            screenDimensions: initialScreenDimensions,
+            screenDimensions: initialScreenDimensions
         };
         this.glideAlwaysTimer = null;
         this.listRef = null;
@@ -359,7 +362,7 @@ export default class ImageView extends Component<PropsType, StateType> {
     }
 
     componentWillReceiveProps(nextProps: PropsType) {
-        const {images, imageIndex, isVisible} = this.state;
+        const { images, imageIndex, isVisible } = this.state;
 
         if (
             typeof nextProps.isVisible !== 'undefined' &&
@@ -410,13 +413,13 @@ export default class ImageView extends Component<PropsType, StateType> {
         }
     }
 
-    onChangeDimension = ({window}: {window: DimensionsType}) => {
+    onChangeDimension = ({ window }: { window: DimensionsType }) => {
         const screenDimensions = {
             screenWidth: window.width,
             screenHeight: window.height,
         };
 
-        this.setState({screenDimensions});
+        this.setState({ screenDimensions });
         styles = createStyles(screenDimensions);
 
         this.onNextImagesReceived(this.props.images, this.state.imageIndex);
@@ -426,7 +429,7 @@ export default class ImageView extends Component<PropsType, StateType> {
         this.imageInitialParams = images.map(image =>
             getInitialParams(image, this.state.screenDimensions)
         );
-        const {scale, translate} = this.imageInitialParams[imageIndex] || {
+        const { scale, translate } = this.imageInitialParams[imageIndex] || {
             scale: 1,
             translate: {},
         };
@@ -445,7 +448,7 @@ export default class ImageView extends Component<PropsType, StateType> {
 
     // $FlowFixMe
     onFlatListRender = flatListRef => {
-        const {images, imageIndex, isFlatListRerendered} = this.state;
+        const { images, imageIndex, isFlatListRerendered } = this.state;
 
         if (flatListRef && !isFlatListRerendered) {
             this.listRef = flatListRef;
@@ -467,8 +470,8 @@ export default class ImageView extends Component<PropsType, StateType> {
     };
 
     onNextImage = (event: EventType) => {
-        const {imageIndex} = this.state;
-        const {x} = event.nativeEvent.contentOffset || {x: 0};
+        const { imageIndex } = this.state;
+        const { x } = event.nativeEvent.contentOffset || { x: 0 };
 
         const nextImageIndex = Math.round(
             x / this.state.screenDimensions.screenWidth
@@ -505,7 +508,7 @@ export default class ImageView extends Component<PropsType, StateType> {
         if (this.isScrolling) {
             return;
         }
-        
+
         if (this.currentTouchesNum === 1 && event.touches.length === 2) {
             this.initialTouches = event.touches;
         }
@@ -517,25 +520,26 @@ export default class ImageView extends Component<PropsType, StateType> {
             imageTranslate,
             screenDimensions,
         } = this.state;
-        const {screenHeight} = screenDimensions;
-        const {touches} = event;
-        const {x, y} = imageTranslate;
-        const {dx, dy} = gestureState;
+        const { screenHeight } = screenDimensions;
+        const { touches } = event;
+        const { x, y } = imageTranslate;
+        const { dx, dy } = gestureState;
         const imageInitialScale = this.getInitialScale();
-        const {height} = images[imageIndex];
+        const { height } = images[imageIndex];
         if (imageScale !== imageInitialScale) {
             this.imageTranslateValue.x.setValue(x + dx);
         }
-
         // Do not allow to move image vertically until it fits to the screen
         if (imageScale * height > screenHeight) {
             this.imageTranslateValue.y.setValue(y + dy);
         }
 
         // if image not scaled and fits to the screen
+        const dyScroll = Math.abs(dy) > Math.abs(dx)
         if (
             scalesAreEqual(imageScale, imageInitialScale) &&
-            height * imageInitialScale < screenHeight
+            height * imageInitialScale < screenHeight &&
+            dyScroll
         ) {
             const backgroundOpacity = Math.abs(
                 dy * BACKGROUND_OPACITY_MULTIPLIER
@@ -545,13 +549,18 @@ export default class ImageView extends Component<PropsType, StateType> {
             this.modalBackgroundOpacity.setValue(
                 backgroundOpacity > 1 ? 1 : backgroundOpacity
             );
+
+        }
+        if (Math.abs(dy) > 50 && dyScroll) {
+            this.close()
         }
 
         const currentDistance = getDistance(touches);
         const initialDistance = getDistance(this.initialTouches);
 
-        const scrollEnabled = Math.abs(dy) < FREEZE_SCROLL_DISTANCE && event.touches.length < 2;
-        this.setState({scrollEnabled});
+        const scrollEnabled = event.touches.length < 2 &&
+            Math.abs(dy) < FREEZE_SCROLL_DISTANCE && scalesAreEqual(imageScale, imageInitialScale);
+        this.setState({ scrollEnabled });
 
         if (!initialDistance) {
             return;
@@ -596,12 +605,12 @@ export default class ImageView extends Component<PropsType, StateType> {
             return;
         }
 
-        const {imageScale} = this.state;
+        const { imageScale } = this.state;
 
-        let {_value: scale} = this.imageScaleValue;
-        const {_value: modalBackgroundOpacity} = this.modalBackgroundOpacity;
+        let { _value: scale } = this.imageScaleValue;
+        const { _value: modalBackgroundOpacity } = this.modalBackgroundOpacity;
 
-        const {dx, dy, vy} = gestureState;
+        const { dx, dy, vy } = gestureState;
         const imageInitialScale = this.getInitialScale();
         const imageInitialTranslate = this.getInitialTranslate();
 
@@ -631,7 +640,7 @@ export default class ImageView extends Component<PropsType, StateType> {
             }
         }
 
-        const {x, y} = this.calculateNextTranslate(dx, dy, scale);
+        const { x, y } = this.calculateNextTranslate(dx, dy, scale);
         const scrollEnabled =
             scale === this.getInitialScale() &&
             x === imageInitialTranslate.x &&
@@ -641,9 +650,9 @@ export default class ImageView extends Component<PropsType, StateType> {
             [
                 modalBackgroundOpacity > 0
                     ? Animated.timing(this.modalBackgroundOpacity, {
-                          toValue: 0,
-                          duration: 100,
-                      })
+                        toValue: 0,
+                        duration: 100,
+                    })
                     : null,
                 Animated.timing(this.imageTranslateValue.x, {
                     toValue: x,
@@ -666,20 +675,19 @@ export default class ImageView extends Component<PropsType, StateType> {
                 duration: 150,
             }).start(this.close);
         }
-
         this.setState({
             imageScale: scale,
-            imageTranslate: {x, y},
+            imageTranslate: { x, y },
             scrollEnabled,
         });
     }
 
     onImageLoaded(index: number) {
-        const {images} = this.state;
+        const { images } = this.state;
 
-        images[index] = {...images[index], loaded: true};
+        images[index] = { ...images[index], loaded: true };
 
-        this.setState({images});
+        this.setState({ images });
     }
 
     onMomentumScrollBegin = () => {
@@ -695,9 +703,9 @@ export default class ImageView extends Component<PropsType, StateType> {
     };
 
     getItemLayout = (_: *, index: number): Object => {
-        const {screenWidth} = this.state.screenDimensions;
+        const { screenWidth } = this.state.screenDimensions;
 
-        return {length: screenWidth, offset: screenWidth * index, index};
+        return { length: screenWidth, offset: screenWidth * index, index };
     };
 
     getInitialScale(index?: number): number {
@@ -711,18 +719,18 @@ export default class ImageView extends Component<PropsType, StateType> {
         const imageIndex = index !== undefined ? index : this.state.imageIndex;
         const imageParams = this.imageInitialParams[imageIndex];
 
-        return imageParams ? imageParams.translate : {x: 0, y: 0};
+        return imageParams ? imageParams.translate : { x: 0, y: 0 };
     }
 
     getImageStyle(
         image: ImageType,
         index: number
-    ): {width?: number, height?: number, transform?: any, opacity?: number} {
-        const {imageIndex, screenDimensions} = this.state;
-        const {width, height} = image;
+    ): { width?: number, height?: number, transform?: any, opacity?: number } {
+        const { imageIndex, screenDimensions } = this.state;
+        const { width, height } = image;
 
         if (!width || !height) {
-            return {opacity: 0};
+            return { opacity: 0 };
         }
 
         // very strange caching, fix it with changing size to 1 pixel
@@ -740,9 +748,9 @@ export default class ImageView extends Component<PropsType, StateType> {
                 ? this.imageScaleValue
                 : this.getInitialScale(index);
         // $FlowFixMe
-        transform.push({scale});
+        transform.push({ scale });
 
-        return {width, height, transform};
+        return { width, height, transform };
     }
 
     setSizeForImages = (nextImages: Array<ImageSizeType>): Array<ImageType> => {
@@ -750,7 +758,7 @@ export default class ImageView extends Component<PropsType, StateType> {
             return [];
         }
 
-        const {images} = this.state;
+        const { images } = this.state;
 
         return images.map((image, index) => {
             const nextImageSize = nextImages.find(
@@ -788,16 +796,16 @@ export default class ImageView extends Component<PropsType, StateType> {
         dx: number,
         dy: number,
         scale: number
-    ): {x: number, y: number} {
+    ): { x: number, y: number } {
         const {
             images,
             imageIndex,
             imageTranslate,
             screenDimensions,
         } = this.state;
-        const {x, y} = imageTranslate;
-        const {screenWidth, screenHeight} = screenDimensions;
-        const {width, height} = images[imageIndex];
+        const { x, y } = imageTranslate;
+        const { screenWidth, screenHeight } = screenDimensions;
+        const { width, height } = images[imageIndex];
         const imageInitialScale = this.getInitialScale();
 
         const getTranslate = (axis: string): number => {
@@ -832,7 +840,7 @@ export default class ImageView extends Component<PropsType, StateType> {
             return nextTranslate;
         };
 
-        return {x: getTranslate('x'), y: getTranslate('y')};
+        return { x: getTranslate('x'), y: getTranslate('y') };
     }
 
     togglePanels(isVisible?: boolean) {
@@ -841,7 +849,7 @@ export default class ImageView extends Component<PropsType, StateType> {
                 ? isVisible
                 : !this.state.panelsVisible;
         // toggle footer and header
-        this.setState({panelsVisible});
+        this.setState({ panelsVisible });
 
         Animated.timing(this.headerTranslateValue.y, {
             toValue: !panelsVisible ? -HEADER_HEIGHT : 0,
@@ -862,14 +870,14 @@ export default class ImageView extends Component<PropsType, StateType> {
         this.state.images.indexOf(image).toString();
 
     close = () => {
-        this.setState({isVisible: false});
+        this.setState({ isVisible: false });
 
         if (typeof this.props.onClose === 'function') {
             this.props.onClose();
         }
     };
 
-    renderImage = ({item: image, index}: {item: *, index: number}): * => {
+    renderImage = ({ item: image, index }: { item: *, index: number }): * => {
         const loaded = image.loaded && image.width && image.height;
 
         return (
@@ -890,8 +898,8 @@ export default class ImageView extends Component<PropsType, StateType> {
     };
 
     render(): Node {
-        const {animationType, renderFooter, backgroundColor} = this.props;
-        const {images, imageIndex, isVisible, scrollEnabled} = this.state;
+        const { animationType, renderFooter, backgroundColor, transparent } = this.props;
+        const { images, imageIndex, isVisible, scrollEnabled } = this.state;
 
         const headerTranslate = this.headerTranslateValue.getTranslateTransform();
         const footerTranslate = this.footerTranslateValue.getTranslateTransform();
@@ -909,21 +917,21 @@ export default class ImageView extends Component<PropsType, StateType> {
 
         return (
             <Modal
-                transparent={false}
+                transparent={transparent}
                 visible={isVisible}
                 animationType={animationType}
                 onRequestClose={this.close}
             >
                 <Animated.View
                     style={[
-                        {backgroundColor: animatedBackgroundColor},
+                        { backgroundColor: animatedBackgroundColor },
                         styles.underlay,
                     ]}
                 />
                 <Animated.View
                     style={[styles.header]}
                 >
-                   <BackButton
+                    <BackButton
                         onPress={() => {
                             this.close();
                         }}

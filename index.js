@@ -921,7 +921,7 @@ export default class ImageView extends Component<PropsType, StateType> {
                 visible={isVisible}
                 animationType={animationType}
                 onRequestClose={this.close}
-                supportedOrientations={['landscape','landscape-left','landscape-right']}
+                supportedOrientations={['portrait','landscape','landscape-left','landscape-right']}
             >
                 <Animated.View
                     style={[
@@ -957,6 +957,8 @@ export default class ImageView extends Component<PropsType, StateType> {
                     getItemLayout={this.getItemLayout}
                     onMomentumScrollBegin={this.onMomentumScrollBegin}
                     onMomentumScrollEnd={this.onMomentumScrollEnd}
+                    alwaysBounceHorizontal
+                    bounces
                 />
             </Modal>
         );

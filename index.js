@@ -45,6 +45,7 @@ const BackButton = styled.TouchableOpacity`
     height: 24px;
     width: 70px;
     display: flex;
+    margin-top: ${Platform.OS === 'ios' ? Constants.statusBarHeight : 0}px;
     position: absolute;
     top: 20px;
     left: 15px;

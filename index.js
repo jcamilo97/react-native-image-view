@@ -1,6 +1,7 @@
 // @flow
 
 import React, { Component, type Node } from 'react';
+import { Constants } from 'expo';
 import {
     Text,
     View,
